@@ -13,32 +13,54 @@ class Blockchain(object):
         self.chain = []
         self.current_transactions = []
 
-        self.nodes = set()
+        self.nodes = []
 
         # Genesis Block
         self.new_block(previous_hash='1', proof=100)
 
     def new_block(self, proof, previous_hash=None):
-        # Creates a new Block and adds it to the chain
-        pass
+        block = {
+            'index': len(self.chain)+1,
+            'timestamp': time(),
+            'transaction': self.current_transactions
+            'previous_hash': 'previous_hash',
+            'proof':}
+
+        self.current_transactions = []
+
+        self.chain.append(block)
+        return block
 
     def new_transaction(self, sender, recipient, amount):
-        pass
+        self.current_transactions.append({
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount
+        })
+
+        return self.last_block['index']+1
 
     # @staticmethod
     def hash(self, block):
-        pass
+        block_string = json.dumps(block, sort_keys=True).encode()
+        return hashlib.sha256(block_string).hexdigest()
 
     @property
     def last_block(self):
         return self.chain[-1]
 
     def proof_of_work(self, last_proof):
-        pass
+        proof = 0
+        while self.valid_proof(last_proof, proof) is False:
+            proof += 1
+
+        return proof
 
     @staticmethod
     def valid_proof(last_proof, proof):
-        pass
+        guess = f'{last_proof}{proof}'.encode()
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        return guess_hash[:4] == "0000"
 
     def register_node(self, address):
 
