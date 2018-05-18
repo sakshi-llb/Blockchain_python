@@ -20,51 +20,24 @@ blockchain = Blockchain()
 
 @app.route('/mine', methods=['GET'])
 def mine():
-    # # We run the proof of work algorithm to get the next proof...
-    # last_block = blockchain.last_block
-    # last_proof = last_block['proof']
-    # proof = blockchain.proof_of_work(last_proof)
-
-    # # We must receive a reward for finding the proof.
-    # # The sender is "0" to signify that this node has mined a new coin.
-    # blockchain.new_transaction(
-    #     sender="0",
-    #     recipient=node_identifier,
-    #     amount=1,
-    # )
-
-    # # Forge the new Block by adding it to the chain
-    # previous_hash = blockchain.hash(last_block)
-    # block = blockchain.new_block(proof, previous_hash)
-
-    # response = {
-    #     'message': "New Block Forged",
-    #     'index': block['index'],
-    #     'transactions': block['transactions'],
-    #     'proof': block['proof'],
-    #     'previous_hash': block['previous_hash'],
-    # }
-    # return jsonify(response), 200
 
     last_block = blockchain.last_block
     last_proof = last_block['proof']
-    proof = blockchain.proof_of_work
+    proof = blockchain.proof_of_work(last_proof)
+    miner = "test_server"
 
-    block = blockchain.new_block(proof, last_proof)
-    block['transaction'].append({
-        'sender': 0,
-        'resipient': user_id,
-        'amount': 1
-    })
-
-    blockchain.add_block(block)
+    block = blockchain.new_block(proof, last_proof, miner)
+    # block['transaction'].append({
+    #     'sender': 0,
+    #     'recipient': mine_user_id,
+    #     'amount': 1
+    # })
 
     response = {
         'message': "New Block Forged",
         'index': block['index'],
         'transactions': block['transactions'],
-        'proof': block['proof'],
-        'previous_hash': block['previous_hash'],
+        'proof': block['proof']
     }
     return jsonify(response), 200
 
@@ -79,16 +52,17 @@ def new_transaction():
         return 'Missing values', 400
 
     # Create a new Transaction
-    index = blockchain.new_transaction(
+    blockchain.new_transaction(
         values['sender'], values['recipient'], values['amount'])
 
-    response = {'message': f'Transaction will be added to Block {index}'}
+    response = {'message': f'Transaction will be added to the Block'}
     return jsonify(response), 201
 
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
-    pass
+    response = jsonify(blockchain.chain)
+    return response, 200
 
 
 @app.route('/nodes/register', methods=['POST'])

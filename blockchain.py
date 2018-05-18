@@ -16,30 +16,37 @@ class Blockchain(object):
         self.nodes = []
 
         # Genesis Block
-        self.new_block(previous_hash='1', proof=100)
+        self.new_block(proof=100, previous_hash=1, miner='genesis')
 
     def fill_block(self):
         if len(self.pending_transactions) < 4:
-            return self.pending_transactions
+            transactions = []
+            transactions = self.pending_transactions
+            self.pending_transactions = []
+            return transactions
+
         else:
             transactions = []
             for index in range(4):
-                transactions.append(self.pending_transactions.pop())
+                transactions.append(self.pending_transactions.pop(-index))
             return transactions
 
-    def new_block(self, proof, previous_hash=None):
+    def new_block(self, proof, previous_hash, miner):
         block = {
             'index': len(self.chain) + 1,
             'timestamp': time(),
             'proof': proof,
             'previuos_hash': previous_hash,
-            'transactions': []
+            'transactions': self.fill_block()
         }
-        block['transactions'] = self.fill_block()
-        return block
-
-    def add_block(self, block):
+        if miner != 'genesis':
+            block['transactions'].append({
+                'sender': 0,
+                'recipient': miner,
+                'amount': 1
+            })
         self.chain.append(block)
+        return block
 
     def new_transaction(self, sender, recipient, amount):
         self.pending_transactions.append({
@@ -48,7 +55,7 @@ class Blockchain(object):
             'amount': amount
         })
 
-    # @staticmethod
+    @staticmethod
     def hash(self, block):
         block_string = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(block_string).hexdigest()
@@ -57,16 +64,16 @@ class Blockchain(object):
     def last_block(self):
         return self.chain[-1]
 
-    def proof_of_work(self, last_proof):
+    def proof_of_work(self, previous_hash):
         proof = 0
-        while self.hash_check(last_proof, proof) is False:
+        while self.hash_check(previous_hash, proof) is False:
             proof += 1
 
         return proof
 
     @staticmethod
-    def hash_check(last_proof, proof):
-        guess = f'{last_proof}{proof}'.encode()
+    def hash_check(previous_hash, proof):
+        guess = f'{previous_hash}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:4] == "0000"
 
@@ -80,3 +87,39 @@ class Blockchain(object):
 
     def resolve_conflicts(self):
         pass
+
+
+# Blockchain = Blockchain()
+
+# Blockchain.new_transaction(1, 2, 3)
+# Blockchain.new_transaction(1, 2, 3)
+# Blockchain.new_transaction(1, 2, 3)
+# Blockchain.new_transaction(1, 2, 3)
+# Blockchain.new_transaction(1, 2, 3)
+# Blockchain.new_transaction(1, 2, 3)
+
+# Blockchain.new_block(200, 300)
+# Blockchain.new_block(300, 400)
+
+# last_block = Blockchain.last_block
+# print(last_block)
+# previous_hash = last_block['proof']
+# proof = Blockchain.proof_of_work(previous_hash)
+
+# block = Blockchain.new_block(proof, previous_hash)
+# # block['transaction'].append({
+# #     'sender': 0,
+# #     'recipient': user_id,
+# #     'amount': 1
+# # })
+
+# Blockchain.add_block(block)
+
+# response = {
+#     'message': "New Block Forged",
+#     'index': block['index'],
+#     'transactions': block['transactions'],
+#     'proof': block['proof']
+# }
+
+# print(response)

@@ -11,3 +11,10 @@ print(v, a)
 
 
 print(v, a)
+
+block = {
+    'transactions': []
+}
+block['transactions'] = [1, 2, 3]
+
+print(block['transactions'][0])
