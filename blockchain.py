@@ -11,34 +11,42 @@ from urllib.parse import urlparse
 class Blockchain(object):
     def __init__(self):
         self.chain = []
-        self.current_transactions = []
+        self.pending_transactions = []
 
         self.nodes = []
 
         # Genesis Block
         self.new_block(previous_hash='1', proof=100)
 
+    def fill_block(self):
+        if len(self.pending_transactions) < 4:
+            return self.pending_transactions
+        else:
+            transactions = []
+            for index in range(4):
+                transactions.append(self.pending_transactions.pop())
+            return transactions
+
     def new_block(self, proof, previous_hash=None):
         block = {
-            'index': len(self.chain)+1,
+            'index': len(self.chain) + 1,
             'timestamp': time(),
-            'transaction': self.current_transactions
-            'previous_hash': 'previous_hash',
-            'proof':}
-
-        self.current_transactions = []
-
-        self.chain.append(block)
+            'proof': proof,
+            'previuos_hash': previous_hash,
+            'transactions': []
+        }
+        block['transactions'] = self.fill_block()
         return block
 
+    def add_block(self, block):
+        self.chain.append(block)
+
     def new_transaction(self, sender, recipient, amount):
-        self.current_transactions.append({
+        self.pending_transactions.append({
             'sender': sender,
             'recipient': recipient,
             'amount': amount
         })
-
-        return self.last_block['index']+1
 
     # @staticmethod
     def hash(self, block):
@@ -51,13 +59,13 @@ class Blockchain(object):
 
     def proof_of_work(self, last_proof):
         proof = 0
-        while self.valid_proof(last_proof, proof) is False:
+        while self.hash_check(last_proof, proof) is False:
             proof += 1
 
         return proof
 
     @staticmethod
-    def valid_proof(last_proof, proof):
+    def hash_check(last_proof, proof):
         guess = f'{last_proof}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:4] == "0000"
