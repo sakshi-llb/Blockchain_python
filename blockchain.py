@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from flask import Flask, jsonify, request
 from urllib.parse import urlparse
+import requests
 
 
 class Blockchain(object):
@@ -13,7 +14,7 @@ class Blockchain(object):
         self.chain = []
         self.pending_transactions = []
 
-        self.nodes = []
+        self.users = set()
 
         # Genesis Block
         self.new_block(proof=100, previous_hash=1, miner='genesis')
@@ -46,6 +47,7 @@ class Blockchain(object):
                 'amount': 1
             })
         self.chain.append(block)
+        self.share_new_blocks(block)
         return block
 
     def new_transaction(self, sender, recipient, amount):
@@ -77,9 +79,16 @@ class Blockchain(object):
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:4] == "0000"
 
-    def register_node(self, address):
+    def register_user(self, users):
+        self.users.add(users)
 
-        pass
+    def share_new_blocks(self, block):
+        for user in self.users:
+            url = f'localhost://{user}/shared_block'
+            requests.post(url, data=json.dumps(block))
+
+    def add_shared_blocks(self, block):
+        self.chain.append(block)
 
     def valid_chain(self, chain):
 
@@ -89,37 +98,10 @@ class Blockchain(object):
         pass
 
 
+# from uuid import uuid4
+
 # Blockchain = Blockchain()
 
-# Blockchain.new_transaction(1, 2, 3)
-# Blockchain.new_transaction(1, 2, 3)
-# Blockchain.new_transaction(1, 2, 3)
-# Blockchain.new_transaction(1, 2, 3)
-# Blockchain.new_transaction(1, 2, 3)
-# Blockchain.new_transaction(1, 2, 3)
-
-# Blockchain.new_block(200, 300)
-# Blockchain.new_block(300, 400)
-
-# last_block = Blockchain.last_block
-# print(last_block)
-# previous_hash = last_block['proof']
-# proof = Blockchain.proof_of_work(previous_hash)
-
-# block = Blockchain.new_block(proof, previous_hash)
-# # block['transaction'].append({
-# #     'sender': 0,
-# #     'recipient': user_id,
-# #     'amount': 1
-# # })
-
-# Blockchain.add_block(block)
-
-# response = {
-#     'message': "New Block Forged",
-#     'index': block['index'],
-#     'transactions': block['transactions'],
-#     'proof': block['proof']
-# }
-
-# print(response)
+# Blockchain.register_user(uuid4().hex)
+# Blockchain.register_user(1234)
+# print(Blockchain.users)
