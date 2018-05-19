@@ -14,7 +14,7 @@ class Blockchain(object):
         self.chain = []
         self.pending_transactions = []
 
-        self.users = set()
+        self.nodes = set()
 
         # Genesis Block
         self.new_block(proof=100, previous_hash=1, miner='genesis')
@@ -40,15 +40,14 @@ class Blockchain(object):
             'previuos_hash': previous_hash,
             'transactions': self.fill_block()
         }
-        if miner != 'genesis':
-            block['transactions'].append({
-                'sender': 0,
-                'recipient': miner,
-                'amount': 1
-            })
         self.chain.append(block)
-        self.share_new_blocks(block)
+
         return block
+
+    def recieve_block(self, block):
+
+        self.chain.append(block)
+        return True
 
     def new_transaction(self, sender, recipient, amount):
         self.pending_transactions.append({
@@ -58,7 +57,7 @@ class Blockchain(object):
         })
 
     @staticmethod
-    def hash(self, block):
+    def hash(block):
         block_string = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(block_string).hexdigest()
 
@@ -79,29 +78,75 @@ class Blockchain(object):
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:4] == "0000"
 
-    def register_user(self, users):
-        self.users.add(users)
+    def register_node(self, address):
 
-    def share_new_blocks(self, block):
-        for user in self.users:
-            url = f'localhost://{user}/shared_block'
-            requests.post(url, data=json.dumps(block))
-
-    def add_shared_blocks(self, block):
-        self.chain.append(block)
+        parsed_url = urlparse(address)
+        self.nodes.add(parsed_url.netloc)
 
     def valid_chain(self, chain):
+        last_block = chain[0]
+        current_index = 1
 
-        pass
+        while current_index < len(chain):
+            block = chain[current_index]
+            # Check that the hash of the block is correct
+            if block['previous_hash'] != self.hash(last_block):
+                return False
 
-    def resolve_conflicts(self):
-        pass
+            # Check that the Proof of Work is correct
+            if not self.hash_check(last_block['proof'], block['proof']):
+                return False
+
+            last_block = block
+            current_index += 1
+
+        return True
+
+    def replace_chain(self):
+        neighbours = self.nodes
+        new_chain = None
+
+        # We're only looking for chains longer than ours
+        max_length = len(self.chain)
+
+        # Grab and verify the chains from all the nodes in our network
+        for node in neighbours:
+            response = requests.get(f'http://{node}/chain')
+
+            if response.status_code == 200:
+                length = response.json()['length']
+                chain = response.json()['chain']
+
+                # Check if the length is longer and the chain is valid
+                if length > max_length and self.valid_chain(chain):
+                    max_length = length
+                    new_chain = chain
+
+        # Replace our chain if we discovered a new, valid chain longer than ours
+        if new_chain:
+            self.chain = new_chain
+            return True
+
+        return False
 
 
 # from uuid import uuid4
 
 # Blockchain = Blockchain()
 
-# Blockchain.register_user(uuid4().hex)
-# Blockchain.register_user(1234)
-# print(Blockchain.users)
+# # Blockchain.register_user(uuid4().hex)
+# # Blockchain.register_user(1234)
+# # print(Blockchain.users)
+# block = {
+#     'index':  1,
+#     'timestamp': time(),
+#     'proof': 'proof',
+#     'previuos_hash': 'previous_hash',
+#     'transactions': []
+# }
+
+# block = json.dumps(block)
+
+# block = Blockchain.recieve_block(block)
+
+# print(Blockchain.chain)
